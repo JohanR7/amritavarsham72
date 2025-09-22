@@ -7,18 +7,18 @@ const VolunteerManagement = () => {
   const { committeeId } = useParams();
   const navigate = useNavigate();
   const [volunteers, setVolunteers] = useState([]);
-  
+
   const [assignments, setAssignments] = useState([]);
   const [committee, setCommittee] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [csvFile, setCsvFile] = useState(null);
 
-  const [newVolunteer, setNewVolunteer] = useState({ 
-    name: '', 
-    email: '', 
-    phone: '', 
-    dept: '', 
+  const [newVolunteer, setNewVolunteer] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    dept: '',
     college_id: '',
     role: 'volunteer',
     reporting_time: '',
@@ -61,7 +61,7 @@ const VolunteerManagement = () => {
       // 3. If sessionStorage has nothing, fetch from the API as a last resort
       const response = await committeesAPI.getById(committeeId);
       setCommittee(response);
-      
+
     } catch (error) {
       console.error('Error fetching committee data:', error);
       setError('Failed to load committee data');
@@ -71,7 +71,7 @@ const VolunteerManagement = () => {
   const fetchVolunteersAndAssignments = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch volunteers using the API function
       const volunteersData = await volunteersAPI.getAll({ limit: 500 });
       setVolunteers(volunteersData.data || volunteersData || []);
@@ -99,10 +99,10 @@ const VolunteerManagement = () => {
       setError('');
 
       // Step 1: Check if volunteer already exists
-      const existingVolunteer = volunteers.find(v => 
+      const existingVolunteer = volunteers.find(v =>
         v.email && v.email.toLowerCase() === newVolunteer.email.toLowerCase()
       );
-      
+
       let volunteerId;
 
       if (existingVolunteer) {
@@ -119,10 +119,10 @@ const VolunteerManagement = () => {
         };
 
         console.log('Creating new volunteer with data:', volunteerData);
-        
+
         const createdVolunteer = await volunteersAPI.create(volunteerData);
         console.log('Created volunteer response:', createdVolunteer);
-        
+
         // Update local volunteers state
         setVolunteers(prev => [...prev, createdVolunteer]);
         volunteerId = createdVolunteer.id;
@@ -143,15 +143,15 @@ const VolunteerManagement = () => {
       };
 
       console.log('Creating assignment with data:', assignmentData);
-      
+
       const newAssignment = await assignmentsAPI.create(assignmentData);
       console.log('Created assignment response:', newAssignment);
-      
+
       // Update local assignments state
       setAssignments(prev => [...prev, newAssignment]);
-      
+
       // Reset form
-      setNewVolunteer({ 
+      setNewVolunteer({
         name: '', email: '', phone: '', dept: '', college_id: '',
         role: 'volunteer', reporting_time: '', shift: '', start_time: '', end_time: '', notes: ''
       });
@@ -166,7 +166,7 @@ const VolunteerManagement = () => {
 
     } catch (error) {
       console.error('Error adding volunteer:', error);
-      
+
       // More specific error handling
       if (error.response?.status === 409) {
         if (error.response.data.includes('Email already registered')) {
@@ -199,10 +199,10 @@ const VolunteerManagement = () => {
       // Use the bulkUpload API function
       const result = await volunteersAPI.bulkUpload(csvFile, eventId, parseInt(committeeId));
 
-      
+
       // Show success message
       alert(`Upload successful! Created ${result.created_volunteers} volunteers and ${result.created_assignments} assignments. Updated ${result.updated_assignments} assignments.`);
-      
+
       if (result.errors && result.errors.length > 0) {
         console.warn('Upload errors:', result.errors);
         setError(`Upload completed with some errors. Check console for details.`);
@@ -248,7 +248,7 @@ const VolunteerManagement = () => {
 
       // Use the assignments API update function
       const updatedAssignment = await assignmentsAPI.update(editingAssignment.id, updateData);
-      
+
       // Update local state
       setAssignments(prev => prev.map(assignment =>
         assignment.id === editingAssignment.id
@@ -289,7 +289,7 @@ const VolunteerManagement = () => {
   const handleExportVolunteers = async () => {
     try {
       setLoading(true);
-      
+
       // Use the volunteers API exportCSV function
       const blob = await volunteersAPI.exportCSV();
       const url = window.URL.createObjectURL(blob);
@@ -300,7 +300,7 @@ const VolunteerManagement = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
     } catch (error) {
       console.error('Error exporting volunteers:', error);
       setError('Failed to export volunteers');
@@ -312,7 +312,7 @@ const VolunteerManagement = () => {
   const handleExportAssignments = async () => {
     try {
       setLoading(true);
-      
+
       // Use the assignments API exportCSV function
       const blob = await assignmentsAPI.exportCSV();
       const url = window.URL.createObjectURL(blob);
@@ -323,7 +323,7 @@ const VolunteerManagement = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
     } catch (error) {
       console.error('Error exporting assignments:', error);
       setError('Failed to export assignments');
@@ -371,7 +371,7 @@ const VolunteerManagement = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
           <AlertCircle size={16} className="text-red-600" />
           <span className="text-red-800 text-sm">{error}</span>
-          <button 
+          <button
             onClick={() => setError('')}
             className="ml-auto text-red-600 hover:text-red-800"
           >
@@ -383,101 +383,99 @@ const VolunteerManagement = () => {
       {/* Upload and Add Section */}
       <div className="bg-white rounded-lg p-4 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Add Volunteers</h2>
-        
+
         <div className="space-y-4 mb-6">
           {/* CSV Upload */}
           {/* CSV Upload */}
-<div className="w-full">
-  <label className="flex items-center justify-center w-full h-16 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-    <div className="flex items-center gap-3">
-      <Upload className="w-5 h-5 text-gray-500" />
-      <span className="text-sm text-gray-500 font-medium">
-        {csvFile ? csvFile.name : 'Click to upload CSV'}
-      </span>
-    </div>
-    <input
-      type="file"
-      className="hidden"
-      accept=".csv"
-      onChange={(e) => setCsvFile(e.target.files[0])}
-    />
-  </label>
-            
-  {csvFile && (
-    <div className="flex gap-2 mt-2">
-      <button
-        onClick={handleCsvUpload}
-        disabled={loading}
-        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? 'Uploading...' : 'Upload CSV'}
-      </button>
-      <button
-        onClick={() => setCsvFile(null)}
-        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-      >
-        Clear
-      </button>
-    </div>
-  )}
-</div>
+          <div className="w-full">
+            <label className="flex items-center justify-center w-full h-16 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div className="flex items-center gap-3">
+                <Upload className="w-5 h-5 text-gray-500" />
+                <span className="text-sm text-gray-500 font-medium">
+                  {csvFile ? csvFile.name : 'Click to upload CSV'}
+                </span>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files[0])}
+              />
+            </label>
+
+            {csvFile && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleCsvUpload}
+                  disabled={loading}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Uploading...' : 'Upload CSV'}
+                </button>
+                <button
+                  onClick={() => setCsvFile(null)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-  <button
-    onClick={() => setShowAddForm(true)}
-    disabled={loading}
-    className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-  >
-    <Plus size={18} />
-    Add Manually
-  </button>
-</div>
+            <button
+              onClick={() => setShowAddForm(true)}
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Plus size={18} />
+              Add Manually
+            </button>
+          </div>
 
-<div className="flex-1">
-  <select
-    onChange={(e) => {
-      if (e.target.value === 'volunteers') {
-        handleExportVolunteers();
-        e.target.value = ''; // Reset dropdown
-      } else if (e.target.value === 'assignments') {
-        handleExportAssignments();
-        e.target.value = ''; // Reset dropdown
-      }
-    }}
-    disabled={loading}
-    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-  >
-    <option value="">Export Data...</option>
-    <option value="volunteers">Export Volunteers</option>
-    <option value="assignments">Export Assignments</option>
-  </select>
-</div>
+          <div className="flex-1">
+            <select
+              onChange={(e) => {
+                if (e.target.value === 'volunteers') {
+                  handleExportVolunteers();
+                  e.target.value = ''; // Reset dropdown
+                } else if (e.target.value === 'assignments') {
+                  handleExportAssignments();
+                  e.target.value = ''; // Reset dropdown
+                }
+              }}
+              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            >
+              <option value="">Export Data...</option>
+              <option value="volunteers">Export Volunteers</option>
+              <option value="assignments">Export Assignments</option>
+            </select>
+          </div>
         </div>
 
         {/* CSV Format Toggle */}
-<div className="text-center">
-  <button
-    onClick={() => setShowCsvFormat(!showCsvFormat)}
-    className="text-blue-600 text-sm underline hover:text-blue-800"
-  >
-    {showCsvFormat ? 'Hide' : 'Show'} CSV Format Info
-  </button>
-</div>
+        <div className="text-center">
+          <button
+            onClick={() => setShowCsvFormat(!showCsvFormat)}
+            className="text-blue-600 text-sm underline hover:text-blue-800"
+          >
+            {showCsvFormat ? 'Hide' : 'Show'} CSV Format Info
+          </button>
+        </div>
 
-{/* CSV Format Info */}
-{showCsvFormat && (
-  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-    <p className="text-sm text-blue-800">
-      <strong>CSV Format:</strong> name,email,phone,dept,college_id,reporting_time_iso,shift,start_time_iso,end_time_iso,role,status,notes
-    </p>
-    <p className="text-xs text-blue-600 mt-1">
-      <strong>Example:</strong> John Doe,john@example.com,123-456-7890,CS,V1001,2025-10-26T08:00:00+05:30,Morning Shift,2025-10-26T09:00:00+05:30,2025-10-26T13:00:00+05:30,lead,assigned,Oversee setup
-    </p>
-    <p className="text-xs text-blue-600 mt-1">
-      <strong>Note:</strong> Times should be in RFC3339 format (ISO 8601 with timezone)
-    </p>
-  </div>
-)}
+        {/* CSV Format Info */}
+        {showCsvFormat && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+            <p className="text-sm text-blue-800">
+              <strong>CSV Format:</strong> SI.NO,	Roll No,	Name,	Shift,	Group No,	Faculty,	Committee
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              <strong>Example:</strong> 1,	AM.SC.U4AIE23038,	Johan,	lunch,	CSE A3,	Lakshmi,	Plate washing
+
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Add Manual Form Modal */}
@@ -485,116 +483,116 @@ const VolunteerManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">Add Volunteer & Assignment</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Volunteer Details */}
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-700">Volunteer Information</h4>
-                
+
                 <input
                   type="text"
                   placeholder="Full Name *"
                   value={newVolunteer.name}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, name: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
-                
+
                 <input
                   type="email"
                   placeholder="Email *"
                   value={newVolunteer.email}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, email: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
-                
+
                 <input
                   type="tel"
                   placeholder="Phone Number"
                   value={newVolunteer.phone}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, phone: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                
+
                 <input
                   type="text"
                   placeholder="Department"
                   value={newVolunteer.dept}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, dept: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, dept: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                
+
                 <input
                   type="text"
                   placeholder="College ID"
                   value={newVolunteer.college_id}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, college_id: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, college_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              
+
               {/* Assignment Details */}
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-700">Assignment Information</h4>
-                
+
                 <select
                   value={newVolunteer.role}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, role: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, role: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="volunteer">Volunteer</option>
                   <option value="lead">Team Lead</option>
                   <option value="support">Support</option>
                 </select>
-                
+
                 <input
                   type="text"
                   placeholder="Shift (e.g., Morning Shift)"
                   value={newVolunteer.shift}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, shift: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, shift: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reporting Time</label>
                   <input
                     type="datetime-local"
                     value={newVolunteer.reporting_time}
-                    onChange={(e) => setNewVolunteer({...newVolunteer, reporting_time: e.target.value})}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, reporting_time: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                   <input
                     type="datetime-local"
                     value={newVolunteer.start_time}
-                    onChange={(e) => setNewVolunteer({...newVolunteer, start_time: e.target.value})}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, start_time: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
                   <input
                     type="datetime-local"
                     value={newVolunteer.end_time}
-                    onChange={(e) => setNewVolunteer({...newVolunteer, end_time: e.target.value})}
+                    onChange={(e) => setNewVolunteer({ ...newVolunteer, end_time: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <textarea
                   placeholder="Notes"
                   value={newVolunteer.notes}
-                  onChange={(e) => setNewVolunteer({...newVolunteer, notes: e.target.value})}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-20 resize-none"
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleAddVolunteer}
@@ -606,7 +604,7 @@ const VolunteerManagement = () => {
               <button
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewVolunteer({ 
+                  setNewVolunteer({
                     name: '', email: '', phone: '', dept: '', college_id: '',
                     role: 'volunteer', reporting_time: '', shift: '', start_time: '', end_time: '', notes: ''
                   });
@@ -637,20 +635,20 @@ const VolunteerManagement = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-700">Assignment Details</h4>
-                    
+
                     <select
                       value={editingAssignment.role}
-                      onChange={(e) => setEditingAssignment({...editingAssignment, role: e.target.value})}
+                      onChange={(e) => setEditingAssignment({ ...editingAssignment, role: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="volunteer">Volunteer</option>
                       <option value="lead">Team Lead</option>
                       <option value="support">Support</option>
                     </select>
-                    
+
                     <select
                       value={editingAssignment.status}
-                      onChange={(e) => setEditingAssignment({...editingAssignment, status: e.target.value})}
+                      onChange={(e) => setEditingAssignment({ ...editingAssignment, status: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="assigned">Assigned</option>
@@ -658,57 +656,57 @@ const VolunteerManagement = () => {
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
-                    
+
                     <input
                       type="text"
                       placeholder="Shift"
                       value={editingAssignment.shift}
-                      onChange={(e) => setEditingAssignment({...editingAssignment, shift: e.target.value})}
+                      onChange={(e) => setEditingAssignment({ ...editingAssignment, shift: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  
+
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-700">Schedule</h4>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Reporting Time</label>
                       <input
                         type="datetime-local"
                         value={formatDateTimeInput(editingAssignment.reporting_time)}
-                        onChange={(e) => setEditingAssignment({...editingAssignment, reporting_time: e.target.value})}
+                        onChange={(e) => setEditingAssignment({ ...editingAssignment, reporting_time: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                       <input
                         type="datetime-local"
                         value={formatDateTimeInput(editingAssignment.start_time)}
-                        onChange={(e) => setEditingAssignment({...editingAssignment, start_time: e.target.value})}
+                        onChange={(e) => setEditingAssignment({ ...editingAssignment, start_time: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
                       <input
                         type="datetime-local"
                         value={formatDateTimeInput(editingAssignment.end_time)}
-                        onChange={(e) => setEditingAssignment({...editingAssignment, end_time: e.target.value})}
+                        onChange={(e) => setEditingAssignment({ ...editingAssignment, end_time: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    
+
                     <textarea
                       placeholder="Notes"
                       value={editingAssignment.notes || ''}
-                      onChange={(e) => setEditingAssignment({...editingAssignment, notes: e.target.value})}
+                      onChange={(e) => setEditingAssignment({ ...editingAssignment, notes: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-16 resize-none"
                     />
                   </div>
-                  
+
                   <div className="lg:col-span-2 flex gap-2">
                     <button
                       onClick={handleUpdateAssignment}
@@ -734,20 +732,19 @@ const VolunteerManagement = () => {
                       <h3 className="font-medium text-gray-800">
                         {assignment.volunteer_name || `Volunteer ID: ${assignment.volunteer_id}`}
                       </h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                        assignment.status === 'standby' ? 'bg-yellow-100 text-yellow-800' :
-                        assignment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs rounded-full ${assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
+                          assignment.status === 'standby' ? 'bg-yellow-100 text-yellow-800' :
+                            assignment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
                         {assignment.status}
                       </span>
                     </div>
-                    
+
                     {assignment.volunteer_email && (
                       <p className="text-sm text-gray-600 mb-1">{assignment.volunteer_email}</p>
                     )}
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
                       <div>
                         <span className="font-medium">Role:</span> {assignment.role}
@@ -759,14 +756,14 @@ const VolunteerManagement = () => {
                         <span className="font-medium">Reporting:</span> {assignment.reporting_time ? formatDateTime(assignment.reporting_time) : 'N/A'}
                       </div>
                       <div>
-                        <span className="font-medium">Duration:</span> 
-                        {assignment.start_time && assignment.end_time 
+                        <span className="font-medium">Duration:</span>
+                        {assignment.start_time && assignment.end_time
                           ? `${formatDateTime(assignment.start_time)} - ${formatDateTime(assignment.end_time)}`
                           : 'N/A'
                         }
                       </div>
                     </div>
-                    
+
                     {assignment.notes && (
                       <div className="mt-2">
                         <span className="font-medium text-sm text-gray-700">Notes:</span>
@@ -774,7 +771,7 @@ const VolunteerManagement = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEditAssignment(assignment)}
@@ -797,7 +794,7 @@ const VolunteerManagement = () => {
               )}
             </div>
           ))}
-          
+
           {assignments.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <Users size={48} className="mx-auto mb-4 text-gray-300" />

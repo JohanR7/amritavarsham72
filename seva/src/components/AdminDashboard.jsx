@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreVertical, Plus, Users, Clock, CheckCircle, XCircle, Download, Upload } from 'lucide-react';
-import { announcementsAPI, committeesAPI, volunteersAPI, attendanceDetailAPI } from '../services/api';
+import { MoreVertical, Plus, Users, Clock, CheckCircle, XCircle, Download, Upload, Trash2 } from 'lucide-react'; import { announcementsAPI, committeesAPI, volunteersAPI, attendanceDetailAPI } from '../services/api';
 
 
 const AdminDashboard = () => {
@@ -27,78 +26,94 @@ const AdminDashboard = () => {
   const [allGeneralAnnouncements, setAllGeneralAnnouncements] = useState([]);
   const navigate = useNavigate();
 
-  // Load data from API
   useEffect(() => {
     loadData();
   }, []);
-// Auto-refresh data every 30 seconds when component is visible
-useEffect(() => {
-  const interval = setInterval(() => {
-    if (document.visibilityState === 'visible') {
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+  useEffect(() => {
+    const handleFocus = () => {
       loadData();
-    }
-  }, 30000); // Refresh every 30 seconds
+    };
 
-  return () => clearInterval(interval);
-}, []);
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
   const loadData = async () => {
-  try {
-    setLoading(true);
-    const [announcementsData, committeesData] = await Promise.all([
-      announcementsAPI.getAll({ active_only: true, limit: 10 }),
-      committeesAPI.getAll({ limit: 20 })
-    ]);
+    try {
+      setLoading(true);
+      const [announcementsData, committeesData] = await Promise.all([
+        announcementsAPI.getAll({ active_only: true, limit: 10 }),
+        committeesAPI.getAll({ limit: 20 })
+      ]);
 
-    // Transform committee data to include real-time attendance stats
-    const transformedCommittees = await Promise.all(
-      (committeesData.data || committeesData || []).map(async (committee) => {
-        try {
-          // Get actual assignments count for this committee
-          const assignmentsData = await volunteersAPI.getAssignments({
-            committee_id: committee.id,
-            limit: 500
-          });
-          const totalVolunteers = assignmentsData.length;
+      // Transform committee data to include real-time attendance stats
+      const transformedCommittees = await Promise.all(
+        (committeesData.data || committeesData || []).map(async (committee) => {
+          try {
+            // Get actual assignments count for this committee
+            const assignmentsData = await volunteersAPI.getAssignments({
+              committee_id: committee.id,
+              limit: 500
+            });
+            const totalVolunteers = assignmentsData.length;
 
-          // Get active attendance for this committee
-          const activeAttendance = await attendanceDetailAPI.getActiveInCommittee({
-            committee_id: committee.id,
-            limit: 500
-          });
-          const present = activeAttendance.length;
-          const absent = totalVolunteers - present;
+            // Get active attendance for this committee
+            const activeAttendance = await attendanceDetailAPI.getActiveInCommittee({
+              committee_id: committee.id,
+              limit: 500
+            });
+            const present = activeAttendance.length;
+            const absent = totalVolunteers - present;
 
-          return {
-            ...committee,
-            totalVolunteers,
-            present,
-            absent
-          };
-        } catch (error) {
-          console.error(`Error fetching stats for committee ${committee.id}:`, error);
-          return {
-            ...committee,
-            totalVolunteers: committee.volunteer_count || 0,
-            present: 0,
-            absent: committee.volunteer_count || 0
-          };
-        }
-      })
-    );
+            return {
+              ...committee,
+              totalVolunteers,
+              present,
+              absent
+            };
+          } catch (error) {
+            console.error(`Error fetching stats for committee ${committee.id}:`, error);
+            return {
+              ...committee,
+              totalVolunteers: committee.volunteer_count || 0,
+              present: 0,
+              absent: committee.volunteer_count || 0
+            };
+          }
+        })
+      );
 
-    setCommittees(transformedCommittees);
+      setCommittees(transformedCommittees);
+      sessionStorage.setItem('committees', JSON.stringify(transformedCommittees));
+      setAnnouncements(announcementsData.data || announcementsData || []);
+      setError('');
 
-    // Store committees in sessionStorage for CommitteeDetail to access
-    sessionStorage.setItem('committees', JSON.stringify(transformedCommittees));
-
-    setError('');
-  } catch (err) {
-    console.error('Error loading data:', err);
-    setError('Failed to load data');
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateCommittee = async () => {
     if (committeeName.trim()) {
@@ -281,6 +296,58 @@ useEffect(() => {
     } catch (error) {
       console.error('Error exporting assignments:', error);
       setError('Failed to export assignments');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleDeleteAnnouncement = async (announcementId) => {
+    if (!window.confirm('Are you sure you want to delete this announcement? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      await announcementsAPI.delete(announcementId);
+
+      // Remove from local state
+      setAnnouncements(prev => prev.filter(announcement => announcement.id !== announcementId));
+      setAllGeneralAnnouncements(prev => prev.filter(announcement => announcement.id !== announcementId));
+
+      alert('Announcement deleted successfully');
+
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      setError('Failed to delete announcement: ' + (error.response?.data || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCommittee = async (committeeId) => {
+    if (!window.confirm('Are you sure you want to delete this committee? This will also remove all associated assignments. This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      await committeesAPI.delete(committeeId);
+
+      // Remove from local state
+      const updatedCommittees = committees.filter(committee => committee.id !== committeeId);
+      setCommittees(updatedCommittees);
+
+      // Update sessionStorage
+      sessionStorage.setItem('committees', JSON.stringify(updatedCommittees));
+
+      alert('Committee deleted successfully');
+
+    } catch (error) {
+      console.error('Error deleting committee:', error);
+      setError('Failed to delete committee: ' + (error.response?.data || error.message));
     } finally {
       setLoading(false);
     }
@@ -489,15 +556,6 @@ useEffect(() => {
                   />
                 </label>
               </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>CSV Format:</strong> name,email,phone,dept,college_id,reporting_time_iso,shift,start_time_iso,end_time_iso,role,status,notes
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Times should be in RFC3339 format (e.g., 2025-10-26T08:00:00+05:30)
-                </p>
-              </div>
             </div>
 
             <div className="flex gap-2 mt-6">
@@ -549,9 +607,9 @@ useEffect(() => {
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium text-gray-800">{announcement.title}</h4>
                     <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ml-2 ${announcement.priority === 'urgent' ? 'bg-red-100 text-red-600' :
-                        announcement.priority === 'high' ? 'bg-orange-100 text-orange-600' :
-                          announcement.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
-                            'bg-gray-100 text-gray-600'
+                      announcement.priority === 'high' ? 'bg-orange-100 text-orange-600' :
+                        announcement.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
+                          'bg-gray-100 text-gray-600'
                       }`}>
                       {announcement.priority}
                     </span>
@@ -559,7 +617,20 @@ useEffect(() => {
                   <p className="text-gray-600 text-sm mt-1 line-clamp-2">{announcement.body}</p>
                   <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
                     <span>By: {announcement.created_by_name || 'Admin'}</span>
-                    <span>{formatDate(announcement.created_at)}</span>
+                    <div className="flex items-center gap-2">
+                      <span>{formatDate(announcement.created_at)}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAnnouncement(announcement.id);
+                        }}
+                        disabled={loading}
+                        className="text-red-500 hover:text-red-700 disabled:opacity-50"
+                        title="Delete announcement"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -576,9 +647,9 @@ useEffect(() => {
               <div className="flex-1 pr-4">
                 <h3 className="text-lg font-semibold text-gray-800">{selectedAnnouncement.title}</h3>
                 <span className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${selectedAnnouncement.priority === 'urgent' ? 'bg-red-100 text-red-600' :
-                    selectedAnnouncement.priority === 'high' ? 'bg-orange-100 text-orange-600' :
-                      selectedAnnouncement.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
-                        'bg-gray-100 text-gray-600'
+                  selectedAnnouncement.priority === 'high' ? 'bg-orange-100 text-orange-600' :
+                    selectedAnnouncement.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
+                      'bg-gray-100 text-gray-600'
                   }`}>
                   {selectedAnnouncement.priority}
                 </span>
@@ -621,9 +692,12 @@ useEffect(() => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Recent Announcements</h2>
           <div className="flex gap-2">
-            {allGeneralAnnouncements.length > 2 && (
+            {announcements.length > 2 && (
               <button
-                onClick={() => setShowAllAnnouncements(true)}
+                onClick={() => {
+                  setAllGeneralAnnouncements(announcements);
+                  setShowAllAnnouncements(true);
+                }}
                 className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-200"
               >
                 View All
@@ -643,7 +717,7 @@ useEffect(() => {
           {announcements.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No announcements yet</p>
           ) : (
-            announcements.map((announcement) => (
+            announcements.slice(0, 2).map((announcement) => (
               <div
                 key={announcement.id}
                 className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all duration-200"
@@ -767,7 +841,6 @@ useEffect(() => {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800">{committee.name}</h3>
-                  <span className="text-xs text-gray-500">ID: {committee.id}</span>
                 </div>
 
                 {committee.description && (
@@ -791,6 +864,18 @@ useEffect(() => {
                       <span>Absent: {committee.absent || 0}</span>
                     </div>
                   </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteCommittee(committee.id);
+                    }}
+                    disabled={loading}
+                    className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1"
+                    title="Delete committee"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
             ))

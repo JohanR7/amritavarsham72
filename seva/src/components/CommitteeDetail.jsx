@@ -244,26 +244,26 @@ const CommitteeDetail = () => {
       });
 
       // Update volunteer status based on active check-ins
-const updatedVolunteers = volunteersData.map(volunteer => {
-  const activeRecord = activeData.find(record => record.volunteer_id === volunteer.id);
-  
-  // If no shift is active, keep status as 'assigned' (neutral)
-  if (!activeShift) {
-    return {
-      ...volunteer,
-      status: 'assigned',
-    };
-  }
-  
-  // If shift is active, update based on attendance records
-  return {
-    ...volunteer,
-    status: activeRecord ? 'present' : 'absent',
-    attendanceId: activeRecord?.id
-  };
-});
+      const updatedVolunteers = volunteersData.map(volunteer => {
+        const activeRecord = activeData.find(record => record.volunteer_id === volunteer.id);
 
-setVolunteers(updatedVolunteers);
+        // If no shift is active, keep status as 'assigned' (neutral)
+        if (!activeShift) {
+          return {
+            ...volunteer,
+            status: 'assigned',
+          };
+        }
+
+        // If shift is active, update based on attendance records
+        return {
+          ...volunteer,
+          status: activeRecord ? 'present' : 'absent',
+          attendanceId: activeRecord?.id
+        };
+      });
+
+      setVolunteers(updatedVolunteers);
 
     } catch (error) {
       console.error('Error fetching attendance data:', error);
@@ -353,57 +353,59 @@ setVolunteers(updatedVolunteers);
     fetchAttendanceData(); // Refresh attendance data when shift starts
   };
 
-const handleEndShift = async () => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    if (selectedShift) {
-      const params = {
-        event_id: '1', // Always use event_id = 1
-        committee_id: id,
-        shift: selectedShift,
-        date: selectedDate
-      };
-      
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/attendance/checkout-shift?${new URLSearchParams(params)}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+  const handleEndShift = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-      if (!response.ok) {
-        throw new Error('Failed to end shift');
+      if (selectedShift) {
+        const params = {
+          event_id: '1', // Always use event_id = 1
+          committee_id: id,
+          shift: selectedShift,
+          date: selectedDate
+        };
+
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/attendance/checkout-shift?${new URLSearchParams(params)}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to end shift');
+        }
+
+        const result = await response.json();
+        alert(result.message || 'Shift ended successfully');
       }
 
-      const result = await response.json();
-      alert(result.message || 'Shift ended successfully');
+      setActiveShift(false);
+      setShowAttendance(false);
+      setSelectedShift('');
+
+      // Clear localStorage when shift ends
+      localStorage.removeItem(`activeShift_${id}`);
+      localStorage.removeItem(`selectedShift_${id}`);
+
+      setVolunteers(prev => prev.map(volunteer => ({
+        ...volunteer,
+        status: 'assigned',
+        attendanceId: null
+      })));
+
+      // Update the committee data in sessionStorage to reflect new stats
+      await fetchCommitteeData();
+
+    } catch (error) {
+      console.error('Error ending shift:', error);
+      setError('Failed to end shift: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
     }
-    
-    setActiveShift(false);
-    setShowAttendance(false);
-    setSelectedShift('');
-    
-    // Clear localStorage when shift ends
-    localStorage.removeItem(`activeShift_${id}`);
-    localStorage.removeItem(`selectedShift_${id}`);
-    
-    // Reset volunteer statuses to neutral when shift ends
-    setVolunteers(prev => prev.map(volunteer => ({
-      ...volunteer,
-      status: 'assigned',
-      attendanceId: null
-    })));
-    
-  } catch (error) {
-    console.error('Error ending shift:', error);
-    setError('Failed to end shift: ' + (error.response?.data?.message || error.message));
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleExportAttendance = async () => {
     try {
@@ -436,68 +438,68 @@ const handleEndShift = async () => {
     }
   };
 
-const toggleAttendance = async (volunteerId) => {
+  const toggleAttendance = async (volunteerId) => {
     if (clickingVolunteer === volunteerId) return;
 
-  try {
-    setLoading(true);
-    setError('');
-    
-    const volunteer = volunteers.find(v => v.id === volunteerId);
-    
-    if (volunteer.status === 'present' && volunteer.attendanceId) {
-      // Check out the volunteer
-      await attendanceDetailAPI.checkout({
-        attendance_id: volunteer.attendanceId,
-        time: new Date().toISOString()
-      });
-      
-      setVolunteers(volunteers.map(v =>
-        v.id === volunteerId
-          ? { ...v, status: 'absent', attendanceId: null }
-          : v
-      ));
-      
-    } else if (volunteer.status !== 'present' && volunteer.assignmentId) {
-      // Check in the volunteer
-      try {
-        const result = await attendanceDetailAPI.checkin({
-          assignment_id: volunteer.assignmentId,
-          lat: 0,
-          lng: 0,
+    try {
+      setLoading(true);
+      setError('');
+
+      const volunteer = volunteers.find(v => v.id === volunteerId);
+
+      if (volunteer.status === 'present' && volunteer.attendanceId) {
+        // Check out the volunteer
+        await attendanceDetailAPI.checkout({
+          attendance_id: volunteer.attendanceId,
           time: new Date().toISOString()
         });
-        
+
         setVolunteers(volunteers.map(v =>
           v.id === volunteerId
-            ? { ...v, status: 'present', attendanceId: result.attendance_id }
+            ? { ...v, status: 'absent', attendanceId: null }
             : v
         ));
-      } catch (checkinError) {
-        if (checkinError.response?.status === 409) {
-          // Already checked in - sync the state
-          setError('Volunteer is already checked in. Syncing status...');
-          await fetchAttendanceData(); // Refresh to get current state
-          return;
-        }
-        throw checkinError;
-      }
-    }
 
-  } catch (error) {
-    console.error('Error updating attendance:', error);
-    if (error.response?.status === 409) {
-      setError('This volunteer is already checked in. Refreshing status...');
-      await fetchAttendanceData(); // Refresh data to sync state
-    } else {
-      setError('Failed to update attendance status');
-    }
-  } finally {
-    setLoading(false);
+      } else if (volunteer.status !== 'present' && volunteer.assignmentId) {
+        // Check in the volunteer
+        try {
+          const result = await attendanceDetailAPI.checkin({
+            assignment_id: volunteer.assignmentId,
+            lat: 0,
+            lng: 0,
+            time: new Date().toISOString()
+          });
+
+          setVolunteers(volunteers.map(v =>
+            v.id === volunteerId
+              ? { ...v, status: 'present', attendanceId: result.attendance_id }
+              : v
+          ));
+        } catch (checkinError) {
+          if (checkinError.response?.status === 409) {
+            // Already checked in - sync the state
+            setError('Volunteer is already checked in. Syncing status...');
+            await fetchAttendanceData(); // Refresh to get current state
+            return;
+          }
+          throw checkinError;
+        }
+      }
+
+    } catch (error) {
+      console.error('Error updating attendance:', error);
+      if (error.response?.status === 409) {
+        setError('This volunteer is already checked in. Refreshing status...');
+        await fetchAttendanceData(); // Refresh data to sync state
+      } else {
+        setError('Failed to update attendance status');
+      }
+    } finally {
+      setLoading(false);
       setClickingVolunteer(null);
 
-  }
-};
+    }
+  };
   const handleVolunteersClick = () => {
     navigate(`/admin/volunteers/${id}`);
   };
@@ -622,85 +624,77 @@ const toggleAttendance = async (volunteerId) => {
           {activeTab === 'attendance' && (
             <div className="space-y-4">
               {/* Controls */}
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                >
-                  <option value="">All Shifts</option>
-                  {availableShifts.map(shift => (
-                    <option key={shift} value={shift}>{shift}</option>
-                  ))}
-                </select>
-                {/* Replace the existing group dropdown with this: */}
-                {selectedShift && shiftGroups[selectedShift] && shiftGroups[selectedShift].length > 0 && (
+              <div className="flex flex-col gap-3">
+                {/* Shift and Group selectors in one row on mobile */}
+                <div className="flex flex-row gap-3">
                   <select
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                    value={selectedShift}
+                    onChange={(e) => setSelectedShift(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">All Groups</option>
-                    {shiftGroups[selectedShift].map((groupData, index) => (
-                      <option key={index} value={JSON.stringify(groupData)}>
-                        {groupData.display}
-                      </option>
+                    <option value="">All Shifts</option>
+                    {availableShifts.map(shift => (
+                      <option key={shift} value={shift}>{shift}</option>
                     ))}
                   </select>
-                )}
 
-              </div>
-              {selectedGroup && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-medium">Selected Group:</span> {JSON.parse(selectedGroup).display}
-                  </p>
+                  {selectedShift && shiftGroups[selectedShift] && shiftGroups[selectedShift].length > 0 && (
+                    <select
+                      value={selectedGroup}
+                      onChange={(e) => setSelectedGroup(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Groups</option>
+                      {shiftGroups[selectedShift].map((groupData, index) => (
+                        <option key={index} value={JSON.stringify(groupData)}>
+                          {groupData.display}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-              )}
+              </div>
+              {/* Active Shift Display */}
               {/* Active Shift Display */}
               {activeShift && selectedShift && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-medium text-green-800">Active Shift: {selectedShift}</h3>
-                      <p className="text-sm text-green-600">
-                        {getShiftPresentCount(selectedShift)}/{getShiftVolunteerCount(selectedShift)} volunteers present
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleEndShift}
-                      disabled={loading}
-
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <Square size={16} />
-                      End Shift
-                    </button>
+                  <div>
+                    <h3 className="font-medium text-green-800">Active Shift: {selectedShift}</h3>
+                    <p className="text-sm text-green-600">
+                      {getShiftPresentCount(selectedShift)}/{getShiftVolunteerCount(selectedShift)} volunteers present
+                    </p>
                   </div>
                 </div>
               )}
 
               {/* Shift Management Buttons */}
-              <div className="space-y-3">
+              <div className="flex flex-row gap-3">
                 {/* Start Shift Button - Only show when dropdown has selection and no active shift */}
                 {!activeShift && selectedShift && availableShifts.includes(selectedShift) && (
                   <button
                     onClick={() => handleStartShift(selectedShift)}
                     disabled={loading}
-                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Play size={16} />
-                    Start {selectedShift} Shift
+                    <span className="hidden sm:inline">Start {selectedShift} Shift</span>
+                    <span className="sm:hidden">Start</span>
                     <span className="text-sm opacity-80">
-                      ({getShiftVolunteerCount(selectedShift)} volunteers)
+                      ({getShiftVolunteerCount(selectedShift)})
                     </span>
+                  </button>
+                )}
+
+                {/* End Shift Button - Only show when shift is active */}
+                {activeShift && selectedShift && (
+                  <button
+                    onClick={handleEndShift}
+                    disabled={loading}
+                    className="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Square size={16} />
+                    <span className="hidden sm:inline">End Shift</span>
+                    <span className="sm:hidden">End</span>
                   </button>
                 )}
 
@@ -713,10 +707,11 @@ const toggleAttendance = async (volunteerId) => {
                     });
                   }}
                   disabled={loading}
-                  className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Download size={16} />
-                  Export {selectedShift || 'All Shifts'}
+                  <span className="hidden sm:inline">Export {selectedShift || 'All Shifts'}</span>
+                  <span className="sm:hidden">Export</span>
                 </button>
               </div>
 
