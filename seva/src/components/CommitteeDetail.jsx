@@ -229,6 +229,7 @@ const CommitteeDetail = () => {
       const volunteersData = assignmentsData.map(assignment => ({
         id: assignment.volunteer_id,
         name: assignment.volunteer_name || `Volunteer ${assignment.volunteer_id}`,
+        collegeId: assignment.volunteer_college_id || 'N/A',
         email: assignment.volunteer_email || `volunteer${assignment.volunteer_id}@example.com`,
         assignmentId: assignment.id,
         shift: assignment.shift,
@@ -316,6 +317,7 @@ const CommitteeDetail = () => {
   // REPLACE the existing filteredVolunteers calculation with this:
   const filteredVolunteers = volunteers.filter(volunteer => {
     const matchesSearch = volunteer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      volunteer.collegeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       volunteer.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesShift = !selectedShift || volunteer.shift === selectedShift;
 
@@ -677,7 +679,7 @@ const CommitteeDetail = () => {
                     className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Play size={16} />
-                    <span className="hidden sm:inline">Start {selectedShift} Shift</span>
+                    <span className="hidden sm:inline">Start {selectedShift}</span>
                     <span className="sm:hidden">Start</span>
                     <span className="text-sm opacity-80">
                       ({getShiftVolunteerCount(selectedShift)})
@@ -727,7 +729,7 @@ const CommitteeDetail = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                     <input
                       type="text"
-                      placeholder="Search volunteers..."
+                      placeholder="Search by name or roll number..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -746,7 +748,7 @@ const CommitteeDetail = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">{volunteer.email}</p>
+                          <p className="text-sm text-gray-600">Roll No: {volunteer.collegeId}</p>
                           {volunteer.shift && (
                             <p className="text-xs text-blue-600">Shift: {volunteer.shift}</p>
                           )}

@@ -16,15 +16,11 @@ const VolunteerManagement = () => {
 
   const [newVolunteer, setNewVolunteer] = useState({
     name: '',
-    email: '',
-    phone: '',
-    dept: '',
     college_id: '',
-    role: 'volunteer',
-    reporting_time: '',
     shift: '',
-    start_time: '',
-    end_time: '',
+    group_no: '',
+    faculty: '',
+    committee: '',
     notes: ''
   });
   const [loading, setLoading] = useState(false);
@@ -130,16 +126,16 @@ const VolunteerManagement = () => {
 
       // Step 3: Create assignment for the volunteer
       const assignmentData = {
-        event_id: eventId, // You might need to get this from context or committee data
+        event_id: eventId,
         committee_id: parseInt(committeeId),
         volunteer_id: volunteerId,
-        role: newVolunteer.role,
+        role: 'volunteer',
         status: 'assigned',
-        reporting_time: newVolunteer.reporting_time ? new Date(newVolunteer.reporting_time).toISOString() : null,
+        reporting_time: null,
         shift: newVolunteer.shift || null,
-        start_time: newVolunteer.start_time ? new Date(newVolunteer.start_time).toISOString() : null,
-        end_time: newVolunteer.end_time ? new Date(newVolunteer.end_time).toISOString() : null,
-        notes: newVolunteer.notes || null
+        start_time: null,
+        end_time: null,
+        notes: newVolunteer.notes || `Group No: ${newVolunteer.group_no}, Faculty: ${newVolunteer.faculty}` || null
       };
 
       console.log('Creating assignment with data:', assignmentData);
@@ -152,8 +148,7 @@ const VolunteerManagement = () => {
 
       // Reset form
       setNewVolunteer({
-        name: '', email: '', phone: '', dept: '', college_id: '',
-        role: 'volunteer', reporting_time: '', shift: '', start_time: '', end_time: '', notes: ''
+        name: '', college_id: '', shift: '', group_no: '', faculty: '', committee: '', notes: ''
       });
       setShowAddForm(false);
 
@@ -468,10 +463,10 @@ const VolunteerManagement = () => {
         {showCsvFormat && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
             <p className="text-sm text-blue-800">
-              <strong>CSV Format:</strong> SI.NO,	Roll No,	Name,	Shift,	Group No,	Faculty,	Committee
+              <strong>CSV Format:</strong> Roll No,	Name,	Shift,	Group No,	Faculty,	Committee
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              <strong>Example:</strong> 1,	AM.SC.U4AIE23038,	Johan,	lunch,	CSE A3,	Lakshmi,	Plate washing
+              <strong>Example:</strong> AM.SC.U4AIE23038,	Johan,	lunch,	CSE A3,	Lakshmi,	Plate washing
 
             </p>
           </div>
@@ -485,13 +480,19 @@ const VolunteerManagement = () => {
             <h3 className="text-lg font-semibold mb-4">Add Volunteer & Assignment</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Volunteer Details */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-700">Volunteer Information</h4>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Roll No *"
+                  value={newVolunteer.college_id}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, college_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
 
                 <input
                   type="text"
-                  placeholder="Full Name *"
+                  placeholder="Name *"
                   value={newVolunteer.name}
                   onChange={(e) => setNewVolunteer({ ...newVolunteer, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -499,90 +500,36 @@ const VolunteerManagement = () => {
                 />
 
                 <input
-                  type="email"
-                  placeholder="Email *"
-                  value={newVolunteer.email}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={newVolunteer.phone}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-
-                <input
                   type="text"
-                  placeholder="Department"
-                  value={newVolunteer.dept}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, dept: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-
-                <input
-                  type="text"
-                  placeholder="College ID"
-                  value={newVolunteer.college_id}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, college_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Assignment Details */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-700">Assignment Information</h4>
-
-                <select
-                  value={newVolunteer.role}
-                  onChange={(e) => setNewVolunteer({ ...newVolunteer, role: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="volunteer">Volunteer</option>
-                  <option value="lead">Team Lead</option>
-                  <option value="support">Support</option>
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="Shift (e.g., Morning Shift)"
+                  placeholder="Shift"
                   value={newVolunteer.shift}
                   onChange={(e) => setNewVolunteer({ ...newVolunteer, shift: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reporting Time</label>
-                  <input
-                    type="datetime-local"
-                    value={newVolunteer.reporting_time}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, reporting_time: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Group No"
+                  value={newVolunteer.group_no}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, group_no: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    value={newVolunteer.start_time}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, start_time: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Faculty"
+                  value={newVolunteer.faculty}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, faculty: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={newVolunteer.end_time}
-                    onChange={(e) => setNewVolunteer({ ...newVolunteer, end_time: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Committee"
+                  value={newVolunteer.committee}
+                  onChange={(e) => setNewVolunteer({ ...newVolunteer, committee: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
 
                 <textarea
                   placeholder="Notes"
@@ -596,7 +543,7 @@ const VolunteerManagement = () => {
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleAddVolunteer}
-                disabled={loading || !newVolunteer.name || !newVolunteer.email}
+                disabled={loading || !newVolunteer.name || !newVolunteer.college_id}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Adding...' : 'Add Volunteer'}
@@ -605,8 +552,7 @@ const VolunteerManagement = () => {
                 onClick={() => {
                   setShowAddForm(false);
                   setNewVolunteer({
-                    name: '', email: '', phone: '', dept: '', college_id: '',
-                    role: 'volunteer', reporting_time: '', shift: '', start_time: '', end_time: '', notes: ''
+                    name: '', college_id: '', shift: '', group_no: '', faculty: '', committee: '', notes: ''
                   });
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
@@ -733,9 +679,9 @@ const VolunteerManagement = () => {
                         {assignment.volunteer_name || `Volunteer ID: ${assignment.volunteer_id}`}
                       </h3>
                       <span className={`px-2 py-1 text-xs rounded-full ${assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                          assignment.status === 'standby' ? 'bg-yellow-100 text-yellow-800' :
-                            assignment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
+                        assignment.status === 'standby' ? 'bg-yellow-100 text-yellow-800' :
+                          assignment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
                         }`}>
                         {assignment.status}
                       </span>

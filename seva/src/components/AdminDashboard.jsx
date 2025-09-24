@@ -49,14 +49,6 @@ const AdminDashboard = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-  useEffect(() => {
-    const handleFocus = () => {
-      loadData();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
   const loadData = async () => {
     try {
       setLoading(true);
@@ -179,63 +171,42 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleBulkUpload = async () => {
-    if (!bulkUploadFile || !selectedCommitteeForUpload) {
-      setError('Please select both a file and a committee for bulk upload');
-      return;
+const handleBulkUpload = async () => {
+  if (!bulkUploadFile || !selectedCommitteeForUpload) {
+    setError('Please select both a file and a committee for bulk upload');
+    return;
+  }
+
+  try {
+    setUploadLoading(true);
+    setError('');
+
+    // Use the bulkUpload API function (same as VolunteerManagement)
+    const result = await volunteersAPI.bulkUpload(bulkUploadFile, 1, parseInt(selectedCommitteeForUpload));
+
+    // Show success message
+    alert(`Upload successful! Created ${result.created_volunteers} volunteers and ${result.created_assignments} assignments. Updated ${result.updated_assignments} assignments.`);
+    
+    if (result.errors && result.errors.length > 0) {
+      console.warn('Upload errors:', result.errors);
+      setError(`Upload completed with some errors. Check console for details.`);
     }
 
-    try {
-      setUploadLoading(true);
-      setError('');
+    // Reset form
+    setBulkUploadFile(null);
+    setSelectedCommitteeForUpload('');
+    setShowBulkUpload(false);
 
-      const formData = new FormData();
-      formData.append('file', bulkUploadFile);
+    // Refresh data
+    loadData();
 
-      const response = await fetch(`/api/volunteers/bulk?event_id=1&committee_id=${selectedCommitteeForUpload}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-
-        // Show success message
-        let message = `Upload successful! Created ${result.created_volunteers} volunteers and ${result.created_assignments} assignments.`;
-        if (result.updated_assignments > 0) {
-          message += ` Updated ${result.updated_assignments} assignments.`;
-        }
-
-        alert(message);
-
-        if (result.errors && result.errors.length > 0) {
-          console.warn('Upload errors:', result.errors);
-          setError(`Upload completed with some errors. Check console for details.`);
-        }
-
-        // Reset form
-        setBulkUploadFile(null);
-        setSelectedCommitteeForUpload('');
-        setShowBulkUpload(false);
-
-        // Refresh data
-        loadData();
-
-      } else {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to upload CSV');
-      }
-
-    } catch (error) {
-      console.error('Error uploading CSV:', error);
-      setError('Failed to upload CSV: ' + error.message);
-    } finally {
-      setUploadLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Error uploading CSV:', error);
+    setError('Failed to upload CSV: ' + error.message);
+  } finally {
+    setUploadLoading(false);
+  }
+};
 
   const handleExportVolunteers = async () => {
     try {
