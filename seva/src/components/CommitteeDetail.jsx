@@ -172,8 +172,8 @@ const CommitteeDetail = () => {
           const notesParts = assignment.notes.split(',').map(note => note.trim());
           console.log('Notes parts:', notesParts); // ADD THIS
           if (notesParts.length >= 2) {
-            const group = notesParts[0];
-            const coordinator = notesParts[1];
+            const group = notesParts[0].replace('Group No:', '').trim();
+            const coordinator = notesParts[1].replace('Faculty:', '').trim();
             const groupData = {
               group: group,
               coordinator: coordinator,
@@ -330,8 +330,8 @@ const CommitteeDetail = () => {
         if (assignment && assignment.notes) {
           const notesParts = assignment.notes.split(',').map(note => note.trim());
           if (notesParts.length >= 2) {
-            const volunteerGroup = notesParts[0];
-            const volunteerCoordinator = notesParts[1];
+            const volunteerGroup = notesParts[0].replace('Group No:', '').trim();
+            const volunteerCoordinator = notesParts[1].replace('Faculty:', '').trim();
             matchesGroup = volunteerGroup === selectedGroupData.group &&
               volunteerCoordinator === selectedGroupData.coordinator;
           } else {
@@ -515,11 +515,66 @@ const CommitteeDetail = () => {
   };
 
   const getShiftVolunteerCount = (shift) => {
-    return volunteers.filter(v => v.shift === shift).length;
+    return volunteers.filter(v => {
+      const matchesShift = v.shift === shift;
+
+      let matchesGroup = true;
+      if (selectedGroup) {
+        try {
+          const selectedGroupData = JSON.parse(selectedGroup);
+          const assignment = assignments.find(a => a.volunteer_id === v.id);
+          if (assignment && assignment.notes) {
+            const notesParts = assignment.notes.split(',').map(note => note.trim());
+            if (notesParts.length >= 2) {
+              const volunteerGroup = notesParts[0].replace('Group No:', '').trim();
+              const volunteerCoordinator = notesParts[1].replace('Faculty:', '').trim();
+              matchesGroup = volunteerGroup === selectedGroupData.group &&
+                volunteerCoordinator === selectedGroupData.coordinator;
+            } else {
+              matchesGroup = false;
+            }
+          } else {
+            matchesGroup = false;
+          }
+        } catch (e) {
+          matchesGroup = false;
+        }
+      }
+
+      return matchesShift && matchesGroup;
+    }).length;
   };
 
   const getShiftPresentCount = (shift) => {
-    return volunteers.filter(v => v.shift === shift && v.status === 'present').length;
+    return volunteers.filter(v => {
+      const matchesShift = v.shift === shift;
+      const isPresent = v.status === 'present';
+
+      let matchesGroup = true;
+      if (selectedGroup) {
+        try {
+          const selectedGroupData = JSON.parse(selectedGroup);
+          const assignment = assignments.find(a => a.volunteer_id === v.id);
+          if (assignment && assignment.notes) {
+            const notesParts = assignment.notes.split(',').map(note => note.trim());
+            if (notesParts.length >= 2) {
+              const volunteerGroup = notesParts[0].replace('Group No:', '').trim();
+              const volunteerCoordinator = notesParts[1].replace('Faculty:', '').trim();
+              matchesGroup = volunteerGroup === selectedGroupData.group &&
+                volunteerCoordinator === selectedGroupData.coordinator;
+            } else {
+              matchesGroup = false;
+            }
+          } else {
+            matchesGroup = false;
+          }
+        } catch (e) {
+          matchesGroup = false;
+        }
+      }
+
+      return matchesShift && isPresent && matchesGroup;
+    }).length;
   };
 
   if (!committee) return (
