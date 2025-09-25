@@ -158,19 +158,18 @@ const Map = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-gray-100 relative overflow-hidden">
-      {/* Mobile Menu Button */}
+    <div className="w-full h-full bg-gray-100 relative overflow-hidden">      {/* Mobile Menu Button */}
       <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-30 md:hidden bg-white rounded-lg shadow-lg p-2 hover:bg-gray-50 transition-colors"
-      >
+  onClick={() => setSidebarOpen(!sidebarOpen)}
+  className="absolute top-4 left-4 z-30 md:hidden bg-white rounded-lg shadow-lg p-2 hover:bg-gray-50 transition-colors"
+>
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white shadow-xl z-20 transform transition-transform duration-300 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:translate-x-0 w-80 overflow-y-auto`}>
+      <div className={`absolute left-0 top-0 h-full bg-white shadow-xl z-20 transform transition-transform duration-300 ${
+  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+} md:translate-x-0 w-80 overflow-y-auto`}>
         <div className="p-4">
           <h2 className="text-lg font-bold mb-4">Campus Locations</h2>
           
@@ -221,7 +220,7 @@ const Map = () => {
       </div>
 
       {/* Controls - Always visible */}
-      <div className="fixed top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-2 flex gap-2">
+      <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-2 flex gap-2">
         <button
           onClick={handleZoomIn}
           className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors touch-manipulation"
@@ -286,13 +285,13 @@ const Map = () => {
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+  className="absolute inset-0 bg-black bg-opacity-50 z-10 md:hidden"
+  onClick={() => setSidebarOpen(false)}
+/>
       )}
 
       {/* Zoom Level Indicator */}
-      <div className="fixed bottom-4 right-4 z-10 bg-white rounded-lg shadow-lg p-2">
+      <div className="absolute bottom-4 right-4 z-10 bg-white rounded-lg shadow-lg p-2">
         <span className="text-sm text-gray-600">Zoom: {Math.round(zoom * 100)}%</span>
       </div>
     </div>
