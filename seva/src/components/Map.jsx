@@ -90,7 +90,6 @@ const Map = () => {
       x: e.clientX - position.x,
       y: e.clientY - position.y
     });
-    e.preventDefault();
   };
 
   const handleMouseMove = (e) => {
@@ -116,7 +115,7 @@ const Map = () => {
         y: touch.clientY - position.y
       });
     }
-    e.preventDefault();
+
   };
 
   const handleTouchMove = (e) => {
@@ -126,7 +125,7 @@ const Map = () => {
       x: touch.clientX - dragStart.x,
       y: touch.clientY - dragStart.y
     });
-    e.preventDefault();
+
   };
 
   const handleTouchEnd = () => {
@@ -196,22 +195,6 @@ const Map = () => {
               )}
             </div>
           </div>
-
-          {/* Selected Location Info */}
-          {selectedLocation && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-800 text-sm mb-1">Selected Location:</h3>
-              <p className="text-sm text-blue-700">
-                <span className="font-semibold">{String(selectedLocation.id).padStart(2, '0')}.</span> {selectedLocation.name}
-              </p>
-              <button
-                onClick={() => setSelectedLocation(null)}
-                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                Clear selection
-              </button>
-            </div>
-          )}
           
           {/* Location List */}
           <div className="space-y-1">

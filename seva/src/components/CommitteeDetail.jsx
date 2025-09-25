@@ -107,13 +107,13 @@ const CommitteeDetail = () => {
         try {
           const assignmentsData = await volunteersAPI.getAssignments({
             committee_id: id,
-            limit: 500
+            limit: 1500
           });
           const totalVolunteers = assignmentsData.length;
 
           const activeAttendance = await attendanceDetailAPI.getActiveInCommittee({
             committee_id: id,
-            limit: 500
+            limit: 1500
           });
           const present = activeAttendance.length;
           const absent = totalVolunteers - present;
@@ -147,7 +147,7 @@ const CommitteeDetail = () => {
     try {
       const assignmentsData = await volunteersAPI.getAssignments({
         committee_id: id,
-        limit: 500
+        limit: 1500
       });
 
       console.log('Raw assignments data:', assignmentsData); // ADD THIS
@@ -220,7 +220,7 @@ const CommitteeDetail = () => {
       // Fetch assignments for the committee
       const assignmentsData = await volunteersAPI.getAssignments({
         committee_id: id,
-        limit: 500
+        limit: 1500
       });
 
       setAssignments(assignmentsData);
@@ -241,7 +241,7 @@ const CommitteeDetail = () => {
       // Fetch active check-ins for the committee
       const activeData = await attendanceDetailAPI.getActiveInCommittee({
         committee_id: id,
-        limit: 500
+        limit: 1500
       });
 
       // Update volunteer status based on active check-ins
@@ -281,7 +281,7 @@ const CommitteeDetail = () => {
       const params = {
         committee_id: id,
         date: selectedDate,
-        limit: 500
+        limit: 1500
       };
 
       if (selectedShift) {
